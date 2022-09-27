@@ -20,7 +20,7 @@ DCElement <- R6Class("DCElement",
    private = list(
      dcTerms = function() {
        dcTermsVocabId <- "http://purl.org/dc/terms/"
-       terms <- getDCMIVocabulary(id = dcTermsVocabId)$get()
+       terms <- getDCMIVocabulary(id = dcTermsVocabId)$data
        sapply(terms$s, function(x){unlist(strsplit(x, dcTermsVocabId))[2]})
      },
      xmlElement = "_abstract_",
@@ -36,20 +36,24 @@ DCElement <- R6Class("DCElement",
      #'@param term term
      #'@param value value
      #'@param vocabulary vocabulary
-     initialize = function(xml = NULL, term = NULL, value = NULL, vocabulary = NULL){
+     #'@param extended extended
+     initialize = function(xml = NULL, term = NULL, value = NULL, vocabulary = NULL, extended = FALSE){
        super$initialize(xml = xml, element = term, wrap = FALSE)
        if(is.null(xml)){
-         if(!term %in% private$dcTerms()){
+         if(!extended) if(!term %in% private$dcTerms()){
            stop(sprintf("'%s' is not a valid Dublin Core term", term))
          }
          if(!is.null(vocabulary)){
            vocab <- getDCMIVocabulary(id = vocabulary)
+           if(is.null(vocab$data)){
+             vocab$fetch()
+           }
            if(is.null(vocab)){
              stop(sprintf("No controlled vocabulary for id '%s'", vocabulary))
            }
-           if(!value %in% vocab$get()$label){
+           if(!value %in% vocab$data$label){
              errMsg <- sprintf("Value '%s' not authorized by DCMI controlled vocabulary for term '%s'.\n", value, term)
-             errMsg <- paste0(errMsg, sprintf("Controlled vocabulary can be browsed in R with the following code:\ngetDCMIVocabulary(id = \"%s\")$get()", vocabulary))
+             errMsg <- paste0(errMsg, sprintf("Controlled vocabulary can be browsed in R with the following code:\nvocab = getDCMIVocabulary(id = \"%s\");\nvocab$fetch();\nvocab$data", vocabulary))
              stop(errMsg)
            }
          }

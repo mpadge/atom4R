@@ -74,3 +74,9 @@ test_that("decoding Zenodo Dublin core",{
     length(dcentry_xml_children)
   )
 })
+
+test_that("reading DC XML",{
+  dcfile <- "https://raw.githubusercontent.com/eblondel/atom4R/master/inst/extdata/examples/zenodo_dc_export.xml"
+  dc <- readDCEntry(dcfile)
+  expect_is(dc, "DCEntry")
+})

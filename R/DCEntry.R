@@ -81,14 +81,29 @@ DCEntry <- R6Class("DCEntry",
      #'@description Adds a Dublin Core element
      #'@param term term
      #'@param value value
+     #'@param extended extended. Default is \code{FALSE}
      #'@return \code{TRUE} if added, \code{FALSE} otherwise
-     addDCElement = function(term, value){
+     addDCElement = function(term, value, extended = FALSE){
        elem <- NULL
+       dc_classname <- paste("DC", toupper(substr(term, 1, 1)), substr(term, 2, nchar(term)), sep="")
        if(is(value,"DCElement")){
-         elem <- value
+         if(!extended){
+           if(is(value, dc_classname)){
+             elem <- value
+           }else{
+             stop(sprintf("Value should be an object of class '%s'", dc_classname))
+           }
+         }else{
+           elem <- value
+         }
        }else{
-         clazz <- DCElement$getClassByElement(term)
-         elem <- clazz$new(value = value)
+         if(!extended){
+           clazz <- eval(parse(text = paste0("atom4R::",dc_classname)))
+           elem <- clazz$new(value = value)
+         }else{
+           clazz <- DCElement$getClassByElement(term)
+           elem <- clazz$new(value = value)
+         }
        }
        if(is.null(self[[term]])) self[[term]] <- list()
        self[[term]][[length(self[[term]])+1]] <- elem
@@ -111,6 +126,33 @@ DCEntry <- R6Class("DCEntry",
        return(length(self[[term]]) == termLength-1)
      },
 
+     #'@description Set a list of DC elements
+     #'@param term term
+     #'@param values vector of values
+     setDCElements = function(term, values){
+       dc_classname <- paste("DC", toupper(substr(term, 1, 1)), substr(term, 2, nchar(term)), sep="")
+       clazz <- eval(parse(text = paste0("atom4R::",dc_classname)))
+       self[[term]] <- lapply(values, function(x){ clazz$new(value = x) })
+     },
+
+     #'@description Get a list of DC elements
+     #'@param term term
+     #'@return a list of objects extending \link{DCElement}
+     getDCElements = function(term){
+        return(self[[term]])
+     },
+
+     #'@description Get a DC element by value
+     #'@param term term
+     #'@param value value
+     getDCElementByValue = function(term, value){
+        element <- NULL
+        els <- self[[term]]
+        els <- els[sapply(els, function(x){x$value == value})]
+        if(length(els)>0) element <- els[[1]]
+        return(element)
+     },
+
      #'@description Adds DC abstract
      #'@param abstract object of class \link{DCAbstract} or vector of class \link{character} and length 1
      #'@return \code{TRUE} if added, \code{FALSE} otherwise
@@ -124,6 +166,18 @@ DCEntry <- R6Class("DCEntry",
        self$delDCElement("abstract", abstract)
      },
 
+     #'@description Set DC abstracts
+     #'@param abstracts abstracts, vector of class \link{character}
+     setDCAbstracts = function(abstracts){
+        self$setDCElements("abstract", abstracts)
+     },
+
+     #'@description Get DC abstracts
+     #'@return a list of objects of class \link{DCAbstract}
+     getDCAbstracts = function(){
+        self$getDCElements("abstract")
+     },
+
      #'@description Adds DC access rights
      #'@param accessRights object of class \link{DCAccessRights} or vector of class \link{character} and length 1
      #'@return \code{TRUE} if added, \code{FALSE} otherwise
@@ -135,6 +189,18 @@ DCEntry <- R6Class("DCEntry",
      #'@param accessRights object of class \link{DCAccessRights} or vector of class \link{character} and length 1
      delDCAccessRights = function(accessRights){
        self$delDCElement("accessRights", accessRights)
+     },
+
+     #'@description Set access rights
+     #'@param accessRights vector of class \link{character}
+     setDCAccessRights = function(accessRights){
+       self$setDCElements("accessRights", accessRights)
+     },
+
+     #'@description Get DC access rights
+     #'@return a list of objects of class \link{DCAccessRights}
+     getDCAccessRights = function(){
+       self$getDCElements("accessRights")
      },
 
      #'@description Adds DC accrual method
@@ -151,6 +217,18 @@ DCEntry <- R6Class("DCEntry",
        self$delDCElement("accrualMethod", accrualMethod)
      },
 
+     #'@description Set DC accrual method
+     #'@param accrualMethods vector of class \link{character}
+     setDCAccrualMethods = function(accrualMethods){
+       self$setDCElements("accrualMethod", accrualMethods)
+     },
+
+     #'@description Get DC accrual method
+     #'@return a list of objects of class \link{DCAccrualMethod}
+     getDCAccrualMethods = function(){
+        self$getDCElements("accrualMethod")
+     },
+
      #'@description Adds DC accrual periodicity
      #'@param accrualPeriodicity object of class \link{DCAccrualPeriodicity} or vector of class \link{character} and length 1
      #'@return \code{TRUE} if added, \code{FALSE} otherwise
@@ -163,6 +241,18 @@ DCEntry <- R6Class("DCEntry",
      #'@return \code{TRUE} if deleted, \code{FALSE} otherwise
      delDCAccrualPeriodicity = function(accrualPeriodicity){
        self$delDCElement("accrualPeriodicity", accrualPeriodicity)
+     },
+
+     #'@description Set DC accrual periodicities
+     #'@param accrualPeriodicities vector of class \link{character}
+     setDCAccrualPeriodicities = function(accrualPeriodicities){
+       self$setDCElements("accrualPeriodicity", accrualPeriodicities)
+     },
+
+     #'@description Get DC accrual periodicities
+     #'@return a list of objects of class \link{DCAccrualPeriodicity}
+     getDCAccrualPeriodicities = function(){
+        self$getDCElements("accrualPeriodicity")
      },
 
      #'@description Adds DC accrual policy
@@ -179,6 +269,18 @@ DCEntry <- R6Class("DCEntry",
        self$delDCElement("accrualPolicy", accrualPolicy)
      },
 
+     #'@description Set DC accrual policies
+     #'@param accrualPolicies vector of class \link{character}
+     setDCAccrualPolicies = function(accrualPolicies){
+       self$setDCElements("accrualPolicy", accrualPolicies)
+     },
+
+     #'@description Get DC accrual policies
+     #'@return a list of objects of class \link{DCAccrualPolicy}
+     getDCAccrualPolicies = function(){
+       self$getDCElements("accrualPolicy")
+     },
+
      #'@description Adds DC alternative
      #'@param alternative object of class \link{DCAlternative} or vector of class \link{character} and length 1
      #'@return \code{TRUE} if added, \code{FALSE} otherwise
@@ -191,6 +293,18 @@ DCEntry <- R6Class("DCEntry",
      #'@return \code{TRUE} if deleted, \code{FALSE} otherwise
      delDCAlternative = function(alternative){
        self$delDCElement("alternative", alternative)
+     },
+
+     #'@description Set DC alternatives
+     #'@param alternatives vector of class \link{character}
+     setDCAlternatives = function(alternatives){
+       self$setDCElements("alternative", alternatives)
+     },
+
+     #'@description Get DC alternatives
+     #'@return a list of objects of class \link{DCAlternative}
+     getDCAlternatives = function(){
+       self$getDCElements("alternative")
      },
 
      #'@description Adds DC audience
@@ -207,6 +321,18 @@ DCEntry <- R6Class("DCEntry",
        self$delDCElement("audience", audience)
      },
 
+     #'@description Set DC audiences
+     #'@param audiences vector of class \link{character}
+     setDCAudiences = function(audiences){
+        self$setDCElements("audience", audiences)
+     },
+
+     #'@description Get DC audiences
+     #'@return a list of objects of class \link{DCAudience}
+     getDCAudiences = function(){
+        self$getDCElements("audience")
+     },
+
      #'@description Adds DC available
      #'@param available object of class \link{DCAvailable} or vector of class \link{Date},\link{POSIXt} or \link{character} and length 1
      #'@return \code{TRUE} if added, \code{FALSE} otherwise
@@ -219,6 +345,18 @@ DCEntry <- R6Class("DCEntry",
      #'@return \code{TRUE} if deleted, \code{FALSE} otherwise
      delDCAvailable = function(available){
        self$delDCElement("available", available)
+     },
+
+     #'@description Set DC availables
+     #'@param availables vector of class \link{character}
+     setDCAvailables = function(availables){
+       self$setDCElements("available", availables)
+     },
+
+     #'@description Get DC availables
+     #'@return a list of objects of class \link{DCAvailable}
+     getDCAvailables = function(){
+       self$getDCElements("available")
      },
 
      #'@description Adds DC bibliographic citation
@@ -235,6 +373,18 @@ DCEntry <- R6Class("DCEntry",
        self$delDCElement("bibliographicCitation", bibliographicCitation)
      },
 
+     #'@description Set bibliographic citations
+     #'@param bibliographicCitations vector of class \link{character}
+     setDCBibliographicCitations = function(bibliographicCitations){
+        self$setDCElements("bibliographicCitation", bibliographicCitations)
+     },
+
+     #'@description Get bibliographic citations
+     #'@return the list of objects of class \link{DCBibliographicCitation}
+     getDCBibliographicCitations = function(){
+        self$getDCElements("bibliographicCitation")
+     },
+
      #'@description Adds DC conforms to
      #'@param conformsTo object of class \link{DCConformsTo} or vector of class \link{character} and length 1
      #'@return \code{TRUE} if added, \code{FALSE} otherwise
@@ -247,6 +397,18 @@ DCEntry <- R6Class("DCEntry",
      #'@return \code{TRUE} if deleted, \code{FALSE} otherwise
      delDCConformsTo = function(conformsTo){
        self$delDCElement("conformsTo", conformsTo)
+     },
+
+     #'@description Set DC conforms to
+     #'@param conformsTo vector of class \link{character}
+     setDCConformsTo = function(conformsTo){
+        self$setDCElements("conformsTo", conformsTo)
+     },
+
+     #'@description Get DC conforms to
+     #'@return the list of objects of class \link{DCConformsTo}
+     getDCConformsTo = function(){
+        self$getDCElements("conformsTo")
      },
 
      #'@description Adds DC contributor
@@ -263,6 +425,18 @@ DCEntry <- R6Class("DCEntry",
        self$delDCElement("contributor", contributor)
      },
 
+     #'@description Set DC contributors
+     #'@param contributors vector of class \link{character}
+     setDCContributors = function(contributors){
+        self$setDCElements("contributor", contributors)
+     },
+
+     #'@description Get DC contributors
+     #'@return list of objects of class \link{DCContributor}
+     getDCContributors = function(){
+        self$getDCElements("contributor")
+     },
+
      #'@description Adds DC coverage
      #'@param coverage object of class \link{DCCoverage} or vector of class \link{character} and length 1
      #'@return \code{TRUE} if added, \code{FALSE} otherwise
@@ -275,6 +449,18 @@ DCEntry <- R6Class("DCEntry",
      #'@return \code{TRUE} if deleted, \code{FALSE} otherwise
      delDCCoverage = function(coverage){
        self$delDCElement("coverage", coverage)
+     },
+
+     #'@description Set DC coverages
+     #'@param coverages coverages vector of class \link{character}
+     setDCCoverages = function(coverages){
+        self$setDCElements("coverage", coverages)
+     },
+
+     #'@description Get DC coverages
+     #'@return a list of objects of class \link{DCCoverage}
+     getDCCoverages = function(){
+        self$getDCElements("coverage")
      },
 
      #'@description Adds DC created
@@ -305,6 +491,18 @@ DCEntry <- R6Class("DCEntry",
        self$delDCElement("creator", creator)
      },
 
+     #'@description Set DC creators
+     #'@param creators creators
+     setDCCreators = function(creators){
+        setDCElements("creator", creators)
+     },
+
+     #'@description Get DC creators
+     #'@return a list of objects of class \link{DCCreator}
+     getDCCreators = function(){
+        self$getDCElements("creator")
+     },
+
      #'@description Adds DC date
      #'@param date object of class \link{DCDate} or vector of class \link{Date},\link{POSIXt} or \link{character} and length 1
      #'@return \code{TRUE} if added, \code{FALSE} otherwise
@@ -317,6 +515,18 @@ DCEntry <- R6Class("DCEntry",
      #'@return \code{TRUE} if deleted, \code{FALSE} otherwise
      delDCDate = function(date){
        self$delDCElement("date", date)
+     },
+
+     #'@description Set DC Creators
+     #'@param dates dates vector of class \link{Date} or \link{POSIXt}
+     setDCDates = function(dates){
+       self$setDCElements("date", dates)
+     },
+
+     #'@description Get DC Dates
+     #'@return a list of objects of class \link{DCDate}
+     getDCDates = function(){
+        self$getDCElements("date")
      },
 
      #'@description Adds DC date accepted
@@ -375,6 +585,18 @@ DCEntry <- R6Class("DCEntry",
        self$delDCElement("description", description)
      },
 
+     #'@description Set DC descriptions
+     #'@param descriptions vector of class \link{character}
+     setDCDescriptions = function(descriptions){
+       self$setDCElements("description", descriptions)
+     },
+
+     #'@description Get DC descriptions
+     #'@return a list of objects of class \link{DCDescription}
+     getDCDescriptions = function(){
+       self$getDCElements("description")
+     },
+
      #'@description Adds DC educational level
      #'@param educationalLevel object of class \link{DCEducationalLevel} or vector of class \link{character} and length 1
      #'@return \code{TRUE} if added, \code{FALSE} otherwise
@@ -387,6 +609,18 @@ DCEntry <- R6Class("DCEntry",
      #'@return \code{TRUE} if deleted, \code{FALSE} otherwise
      delDCEducationalLevel = function(educationalLevel){
        self$delDCElement("educationalLevel", educationalLevel)
+     },
+
+     #'@description set DC education levels
+     #'@param educationLevels vector of class \link{character}
+     setDCEducationalLevels = function(educationLevels){
+       self$setDCElements("educationLevel", educationLevels)
+     },
+
+     #'@description Get DC educational levels
+     #'@return a list of objects of class \link{DCEducationalLevel}
+     getDCEducationalLevels = function(){
+        self$getDCElements("educationalLevel")
      },
 
      #'@description Adds DC extent
@@ -403,6 +637,18 @@ DCEntry <- R6Class("DCEntry",
        self$delDCElement("extent", extent)
      },
 
+     #'@description Set DC extents
+     #'@param extents vector of class \link{character}
+     setDCExtents = function(extents){
+        self$setDCElements("extent", extents)
+     },
+
+     #'@description Get DC extents
+     #'@return a list of objects of class \link{DCExtent}
+     getDCExtents = function(){
+        self$getDCElements("extent")
+     },
+
      #'@description Adds DC format
      #'@param format object of class \link{DCFormat} or vector of class \link{character} and length 1
      #'@return \code{TRUE} if added, \code{FALSE} otherwise
@@ -415,6 +661,18 @@ DCEntry <- R6Class("DCEntry",
      #'@return \code{TRUE} if deleted, \code{FALSE} otherwise
      delDCFormat = function(format){
        self$delDCElement("format", format)
+     },
+
+     #'@description Set DC formats
+     #'@param formats vector of class \link{character}
+     setDCFormats = function(formats){
+        self$setDCElements("format", formats)
+     },
+
+     #'@description Get DC formats
+     #'@return a list of objects of class \link{DCFormat}
+     getDCFormats = function(){
+        self$getDCElements("format")
      },
 
      #'@description Adds DC hasPart
@@ -431,6 +689,18 @@ DCEntry <- R6Class("DCEntry",
         self$delDCElement("hasPart", hasPart)
      },
 
+     #'@description Set DC hasParts
+     #'@param hasParts vector of class \link{character}
+     setDCHasParts = function(hasParts){
+        self$setDCElements("hasPart", hasParts)
+     },
+
+     #'@description Get DC has part
+     #'@return a list of objects of class \link{DCHasPart}
+     getDCHasParts = function(){
+        self$getDCElements("hasPart")
+     },
+
      #'@description Adds DC hasVersion
      #'@param hasVersion object of class \link{DCHasVersion} or vector of class \link{character} and length 1
      #'@return \code{TRUE} if added, \code{FALSE} otherwise
@@ -443,6 +713,18 @@ DCEntry <- R6Class("DCEntry",
      #'@return \code{TRUE} if deleted, \code{FALSE} otherwise
      delDCHasVersion = function(hasVersion){
         self$delDCElement("hasVersion", hasVersion)
+     },
+
+     #'@description Set DC hasVersions
+     #'@param hasVersions vector of class \link{character}
+     setDCHasVersions = function(hasVersions){
+        self$setDCElements("hasVersion", hasVersions)
+     },
+
+     #'@description Get DC has versions
+     #'@return a list of objects of class \link{DCHasVersion}
+     getDCHasVersions = function(){
+        self$getDCElements("hasVersion")
      },
 
      #'@description Adds DC identifier
@@ -459,6 +741,18 @@ DCEntry <- R6Class("DCEntry",
        self$delDCElement("identifier", identifier)
      },
 
+     #'@description Set DC identifiers
+     #'@param identifiers vector of class \link{character}
+     setDCIdentifiers = function(identifiers){
+        self$setDCElements("identifier", identifiers)
+     },
+
+     #'@description Get DC identifiers
+     #'@return a list of objects of class \link{DCIdentifier}
+     getDCIdentifiers = function(){
+       self$getDCElements("identifier")
+     },
+
      #'@description Adds DC instructionalMethod
      #'@param instructionalMethod object of class \link{DCInstructionalMethod} or vector of class \link{character} and length 1
      #'@return \code{TRUE} if added, \code{FALSE} otherwise
@@ -471,6 +765,18 @@ DCEntry <- R6Class("DCEntry",
      #'@return \code{TRUE} if deleted, \code{FALSE} otherwise
      delDCInstructionalMethod = function(instructionalMethod){
        self$delDCElement("instructionalMethod", instructionalMethod)
+     },
+
+     #'@description Set DC Instructional methods
+     #'@param instructionalMethods vector of class \link{character}
+     setDCInstructionalMethods = function(instructionalMethods){
+        self$setDCElements("instructionalMethod", instructionalMethods)
+     },
+
+     #'@description Get DC instructional methods
+     #'@return a list of objects of class \link{DCInstructionalMethod}
+     getDCInstructionalMethods = function(){
+       self$getDCElements("instructionalMethod")
      },
 
      #'@description Adds DC isPartOf
@@ -487,6 +793,18 @@ DCEntry <- R6Class("DCEntry",
         self$delDCElement("isPartOf", isPartOf)
      },
 
+     #'@description Set DC IsPartOf
+     #'@param isPartOf vector of class \link{character}
+     setDCIsPartOf = function(isPartOf){
+        self$setDCElements("isPartOf", isPartOf)
+     },
+
+     #'@description Get DC Is Part of
+     #'@return a list of objects of class \link{DCIsPartOf}
+     getDCIsPartOfs = function(){
+       self$getDCElements("isPartOf")
+     },
+
      #'@description Adds DC isReferencedBy
      #'@param isReferencedBy object of class \link{DCIsReferencedBy} or vector of class \link{character} and length 1
      #'@return \code{TRUE} if added, \code{FALSE} otherwise
@@ -499,6 +817,18 @@ DCEntry <- R6Class("DCEntry",
      #'@return \code{TRUE} if deleted, \code{FALSE} otherwise
      delDCIsReferencedBy = function(isReferencedBy){
         self$delDCElement("isReferencedBy", isReferencedBy)
+     },
+
+     #'@description Set DC isReferencedBys
+     #'@param isReferencedBys vector of class \link{character}
+     setDCIsReferencedBys = function(isReferencedBys){
+        self$setDCElements("isReferencedBy", isReferencedBys)
+     },
+
+     #'@description Get DC Is Referenced by
+     #'@return a list of objects of class \link{DCIsReferencedBy}
+     getDCIsReferencedBys = function(){
+        self$getDCElements("isReferencedBy")
      },
 
      #'@description Adds DC isReplacedBy
@@ -515,6 +845,18 @@ DCEntry <- R6Class("DCEntry",
         self$delDCElement("isReplacedBy", isReplacedBy)
      },
 
+     #'@description Set DC isReplacedBys
+     #'@param isReplacedBys vector of class \link{character}
+     setDCIsReplacedBys = function(isReplacedBys){
+        self$setDCElements("isReplacedBy", isReplacedBys)
+     },
+
+     #'@description Get DC Is Replaced by
+     #'@return a list of objects of class \link{DCIsReplacedBy}
+     getDCIsReplacedBys = function(){
+        self$getDCElements("isReplacedBy")
+     },
+
      #'@description Adds DC isRequiredBy
      #'@param isRequiredBy object of class \link{DCIsRequiredBy} or vector of class \link{character} and length 1
      #'@return \code{TRUE} if added, \code{FALSE} otherwise
@@ -529,6 +871,18 @@ DCEntry <- R6Class("DCEntry",
         self$delDCElement("isRequiredBy", isRequiredBy)
      },
 
+     #'@description Set DC isRequiredBys
+     #'@param isRequiredBys vector of class \link{character}
+     setDCIsRequiredBys = function(isRequiredBys){
+       self$setDCElements("isRequiredBy", isRequiredBys)
+     },
+
+     #'@description Get DC Is Required by
+     #'@return a list of objects of class \link{DCIsRequiredBy}
+     getDCIsRequiredBys = function(){
+        self$getDCElements("isRequiredBy")
+     },
+
      #'@description Adds DC isVersionOf
      #'@param isVersionOf object of class \link{DCIsVersionOf} or vector of class \link{character} and length 1
      #'@return \code{TRUE} if added, \code{FALSE} otherwise
@@ -541,6 +895,18 @@ DCEntry <- R6Class("DCEntry",
      #'@return \code{TRUE} if deleted, \code{FALSE} otherwise
      delDCIsVersionOf = function(isVersionOf){
         self$delDCElement("isVersionOf", isVersionOf)
+     },
+
+     #'@description Set DC isVersionOfs
+     #'@param isVersionOfs vector of class \link{character}
+     setDCIsVersionOfs = function(isVersionOfs){
+        self$setDCElements("isVersionOf", isVersionOfs)
+     },
+
+     #'@description Get DC Is Version Ofs
+     #'@return a list of objects of class \link{DCIsVersionOf}
+     getDCIsVersionOfs = function(){
+        self$getDCElements("isVersionOf")
      },
 
      #'@description Adds DC issued
@@ -571,6 +937,18 @@ DCEntry <- R6Class("DCEntry",
        self$delDCElement("language", language)
      },
 
+     #'@description Set DC languages
+     #'@param languages languages vector of class \link{character}
+     setDCLanguages = function(languages){
+       self$setDCElements("language", languages)
+     },
+
+     #'@description Get languages
+     #'@return a list of objects of class \link{DCLanguage}
+     getDCLanguages = function(){
+       self$getDCElements("language")
+     },
+
      #'@description Adds DC license
      #'@param license object of class \link{DCLicense} or vector of class \link{character} and length 1
      #'@return \code{TRUE} if added, \code{FALSE} otherwise
@@ -583,6 +961,18 @@ DCEntry <- R6Class("DCEntry",
      #'@return \code{TRUE} if deleted, \code{FALSE} otherwise
      delDCLicense = function(license){
        self$delDCElement("license", license)
+     },
+
+     #'@description Set DC licences
+     #'@param licenses vector of class \link{character}
+     setDCLicenses = function(licenses){
+       set$DCElements("license", licenses)
+     },
+
+     #'@description Get DC licenses
+     #'@return a list of objects of class \link{DCLicense}
+     getDCLicenses = function(){
+        self$getDCElements("license")
      },
 
      #'@description Adds DC mediator
@@ -599,6 +989,18 @@ DCEntry <- R6Class("DCEntry",
        self$delDCElement("mediator", mediator)
      },
 
+     #'@description Set DC mediators
+     #'@param mediators vector of class \link{character}
+     setDCMediators = function(mediators){
+       self$setDCElements("mediator", mediators)
+     },
+
+     #'@description Get DC mediators
+     #'@return a list of objects of class \link{DCMediator}
+     getDCMediators = function(){
+        self$getDCElements("mediator")
+     },
+
      #'@description Adds DC medium
      #'@param medium object of class \link{DCMedium} or vector of class \link{character} and length 1
      #'@return \code{TRUE} if added, \code{FALSE} otherwise
@@ -611,6 +1013,18 @@ DCEntry <- R6Class("DCEntry",
      #'@return \code{TRUE} if deleted, \code{FALSE} otherwise
      delDCMedium = function(medium){
        self$delDCElement("medium", medium)
+     },
+
+     #'@description Set DC mediums
+     #'@param mediums vector of class \link{character}
+     setDCMediums = function(mediums){
+       self$setDCElements("medium", mediums)
+     },
+
+     #'@description Get DC mediums
+     #'@return a list of objects of class \link{DCMedium}
+     getDCMediums = function(){
+        self$getDCElements("medium")
      },
 
      #'@description Adds DC modified
@@ -641,6 +1055,18 @@ DCEntry <- R6Class("DCEntry",
        self$delDCElement("provenance", provenance)
      },
 
+     #'@description Set DC provenances
+     #'@param provenances vector of class \link{character}
+     setDCProvenances = function(provenances){
+        self$setDCElements("provenance", provenances)
+     },
+
+     #'@description Get DC provenances
+     #'@return a list of objects of class \link{DCProvenance}
+     getDCProvenances = function(){
+        self$getDCElements("provenance")
+     },
+
      #'@description Adds DC publisher
      #'@param publisher object of class \link{DCPublisher} or vector of class \link{character} and length 1
      #'@return \code{TRUE} if added, \code{FALSE} otherwise
@@ -653,6 +1079,18 @@ DCEntry <- R6Class("DCEntry",
      #'@return \code{TRUE} if deleted, \code{FALSE} otherwise
      delDCPublisher = function(publisher){
        self$delDCElement("publisher", publisher)
+     },
+
+     #'@description Set DC publishers
+     #'@param publishers vector of class \link{character}
+     setDCPublishers = function(publishers){
+        self$setDCElements("publisher", publishers)
+     },
+
+     #'@description Get DC publishers
+     #'@return a list of objects of class \link{DCPublisher}
+     getDCPublishers = function(){
+       self$getDCElements("publisher")
      },
 
      #'@description Adds DC references
@@ -669,6 +1107,18 @@ DCEntry <- R6Class("DCEntry",
        self$delDCElement("references", references)
      },
 
+     #'@description Set DC references
+     #'@param references vector of class \link{character}
+     setDCReferences = function(references){
+        self$setDCElements("references", references)
+     },
+
+     #'@description Get DC references
+     #'@return a list of objects of class \link{DCReferences}
+     getDCReferences = function(){
+        self$getDCElements("references")
+     },
+
      #'@description Adds DC relation
      #'@param relation object of class \link{DCRelation} or vector of class \link{character} and length 1
      #'@return \code{TRUE} if added, \code{FALSE} otherwise
@@ -681,6 +1131,18 @@ DCEntry <- R6Class("DCEntry",
      #'@return \code{TRUE} if deleted, \code{FALSE} otherwise
      delDCRelation = function(relation){
        self$delDCElement("relation", relation)
+     },
+
+     #'@description Set DC relations
+     #'@param relations vector of class \link{character}
+     setDCRelations = function(relations){
+        self$setDCElements("relation", relations)
+     },
+
+     #'@description Get DC relations
+     #'@return a list of objects of class \link{DCRelation}
+     getDCRelations = function(){
+       self$getDCElements("relation")
      },
 
      #'@description Adds DC replaces
@@ -697,6 +1159,18 @@ DCEntry <- R6Class("DCEntry",
        self$delDCElement("replaces", replaces)
      },
 
+     #'@description Set DC replaces
+     #'@param replaces vector of class \link{character}
+     setDCReplaces = function(replaces){
+       self$setDCElements("replace", replaces)
+     },
+
+     #'@description Get DC replaces
+     #'@return a list of objects of class \link{DCReplaces}
+     getDCReplaces = function(){
+        self$getDCElements("replaces")
+     },
+
      #'@description Adds DC requires
      #'@param requires object of class \link{DCRequires} or vector of class \link{character} and length 1
      #'@return \code{TRUE} if added, \code{FALSE} otherwise
@@ -709,6 +1183,18 @@ DCEntry <- R6Class("DCEntry",
      #'@return \code{TRUE} if deleted, \code{FALSE} otherwise
      delDCRequires = function(requires){
        self$delDCElement("requires", requires)
+     },
+
+     #'@description Set DC requires
+     #'@param requires vector of class \link{character}
+     setDCRequires = function(requires){
+       self$setDCElements("requires", requires)
+     },
+
+     #'@description Get DC requires
+     #'@return a list of objects of class \link{DCRequires}
+     getDCRequires = function(){
+        self$getDCElements("requires")
      },
 
      #'@description Adds DC rights
@@ -725,6 +1211,18 @@ DCEntry <- R6Class("DCEntry",
        self$delDCElement("rights", rights)
      },
 
+     #'@description Set DC rights
+     #'@param rights vector of class \link{character}
+     setDCRights = function(rights){
+        self$setDCElements("rights", rights)
+     },
+
+     #'@description Get DC rights
+     #'@return a list of objects of class \link{DCRights}
+     getDCRights = function(){
+        self$getDCElements("rights")
+     },
+
      #'@description Adds DC rightsHolder
      #'@param rightsHolder object of class \link{DCRightsHolder} or vector of class \link{character} and length 1
      #'@return \code{TRUE} if added, \code{FALSE} otherwise
@@ -737,6 +1235,18 @@ DCEntry <- R6Class("DCEntry",
      #'@return \code{TRUE} if deleted, \code{FALSE} otherwise
      delDCRightsHolder = function(rightsHolder){
        self$delDCElement("rightsHolder", rightsHolder)
+     },
+
+     #'@description Set DC rights holders
+     #'@param rightsHolders vector of class \link{character}
+     setDCRightsHolders = function(rightsHolders){
+       self$setDCElements("rightsHolder", rightsHolders)
+     },
+
+     #'@description Get DC rights holders
+     #'@return a list of objects of class \link{DCRightsHolder}
+     getDCRightsHolders = function(){
+       self$getDCElements("rightsHolder")
      },
 
      #'@description Adds DC source
@@ -753,6 +1263,18 @@ DCEntry <- R6Class("DCEntry",
        self$delDCElement("source", source)
      },
 
+     #'@description Set DC sources
+     #'@param sources vector of class \link{character}
+     setDCSources = function(sources){
+       self$setDCSources("source", sources)
+     },
+
+     #'@description Get DC sources
+     #'@return a list of objects of class \link{DCSource}
+     getDCSources = function(){
+        self$getDCElements("source")
+     },
+
      #'@description Adds DC subject
      #'@param subject object of class \link{DCSubject} or vector of class \link{character} and length 1
      #'@return \code{TRUE} if added, \code{FALSE} otherwise
@@ -765,6 +1287,18 @@ DCEntry <- R6Class("DCEntry",
      #'@return \code{TRUE} if deleted, \code{FALSE} otherwise
      delDCSubject = function(subject){
        self$delDCElement("subject", subject)
+     },
+
+     #'@description Set DC subjects
+     #'@param subjects vector of class \link{character}
+     setDCSubjects = function(subjects){
+       self$setDCElements("subject", subjects)
+     },
+
+     #'@description Get DC Subjects
+     #'@return a list of objects of class \link{DCSubject}
+     getDCSubjects = function(){
+        self$getDCElements("subject")
      },
 
      #'@description Adds DC tableOfContents
@@ -781,6 +1315,18 @@ DCEntry <- R6Class("DCEntry",
        self$delDCElement("tableOfContents", tableOfContents)
      },
 
+     #'@description Set DC tables of contents
+     #'@param tablesOfContents vector of class \link{character}
+     setDCTablesOfContents = function(tablesOfContents){
+       self$setDCElements("tableOfContents", tablesOfContents)
+     },
+
+     #'@description Get DC tables of contents
+     #'@return a list of objects of class \link{DCTableOfContents}
+     getDCTablesOfContent = function(){
+        self$getDCElements("tableOfContents")
+     },
+
      #'@description Adds DC temporal
      #'@param temporal object of class \link{DCTemporal} or vector of class \link{character} and length 1
      #'@return \code{TRUE} if added, \code{FALSE} otherwise
@@ -793,6 +1339,18 @@ DCEntry <- R6Class("DCEntry",
      #'@return \code{TRUE} if deleted, \code{FALSE} otherwise
      delDCTemporal = function(temporal){
        self$delDCElement("temporal", temporal)
+     },
+
+     #'@description Set DC temporals
+     #'@param temporals vector of class \link{character}
+     setDCTemporals = function(temporals){
+       self$setDCElements("temporal", temporals)
+     },
+
+     #'@description Get DC temporals
+     #'@return a list of objects of class \link{DCTemporal}
+     getDCTemporals = function(){
+        self$getDCElements("temporal")
      },
 
      #'@description Adds DC title
@@ -809,6 +1367,18 @@ DCEntry <- R6Class("DCEntry",
        self$delDCElement("title", title)
      },
 
+     #'@description Set DC titles
+     #'@param titles vector of class \link{character}
+     setDCTitles = function(titles){
+       self$setDCElements("title", titles)
+     },
+
+     #'@description Get DC titles
+     #'@return a list of objects of class \link{DCTitle}
+     getDCTitles = function(){
+        self$getDCElements("title")
+     },
+
      #'@description Adds DC type
      #'@param type object of class \link{DCType} or vector of class \link{character} and length 1
      #'@return \code{TRUE} if added, \code{FALSE} otherwise
@@ -821,6 +1391,18 @@ DCEntry <- R6Class("DCEntry",
      #'@return \code{TRUE} if deleted, \code{FALSE} otherwise
      delDCType = function(type){
        self$delDCElement("type", type)
+     },
+
+     #'@description Set DC Types
+     #'@param types vector of class \link{character}
+     setDCTypes = function(types){
+        self$setDCElements("type", types)
+     },
+
+     #'@description Get DC types
+     #'@return a list of objects of class \link{DCType}
+     getDCTypes = function(){
+        self$getDCElements("type")
      }
 
    )
